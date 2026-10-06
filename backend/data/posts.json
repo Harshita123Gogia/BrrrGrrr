@@ -1,0 +1,74 @@
+[
+  {
+    "id": "1791312638274",
+    "title": "Fresh and Delicious Veggie Burger",
+    "content": "Who says burgers cannot be fresh and healthy? A veggie burger loaded with lettuce, tomato, onion, and other fresh ingredients can be both nutritious and delicious. Adding your favorite sauce and cheese makes it even better. Fresh ingredients can really make a difference in the taste.",
+    "author": "namrata",
+    "authorId": "1791312570856",
+    "createdAt": "2026-10-06T18:50:38.274Z",
+    "updatedAt": "2026-10-06T18:50:38.274Z"
+  },
+  {
+    "id": "1791312603111",
+    "title": "Why I Love Burgers",
+    "content": "A good burger is more than just a meal for me. It is the perfect combination of a soft bun, crispy vegetables, a flavorful patty, and delicious sauces. What makes burgers even better is that you can customize them according to your taste. Every person can create their own perfect burger!",
+    "author": "namrata",
+    "authorId": "1791312570856",
+    "createdAt": "2026-10-06T18:50:03.113Z",
+    "updatedAt": "2026-10-06T18:50:03.113Z"
+  },
+  {
+    "id": "1791055135559",
+    "title": "My Favourite Spicy Chicken Burger at BrrrGrrr",
+    "content": "If you love burgers with a little extra kick, the Farm Spicy Chicken Burger is definitely worth trying. The crispy chicken, fresh lettuce, creamy sauce and spicy flavours make every bite delicious. I especially liked the balance between the crunchy chicken and the soft toasted bun. It is the kind of burger I would happily order again!",
+    "author": "aditya",
+    "authorId": "1791055126859",
+    "createdAt": "2026-10-03T19:18:55.559Z",
+    "updatedAt": "2026-10-03T19:18:55.559Z"
+  },
+  {
+    "id": "1790673669114",
+    "title": "hello",
+    "content": "hi",
+    "author": "Harshita",
+    "authorId": "1790622299119",
+    "createdAt": "2026-09-29T09:21:09.114Z",
+    "updatedAt": "2026-09-29T09:21:09.114Z"
+  },
+  {
+    "id": "1790622745246",
+    "title": "Why the Farm Spicy Chicken Burger is My Ultimate Favorite 🍗",
+    "content": "I tried the Farm Spicy Chicken Burger last night, and the blend of tandoori sauce with creamy mayo and chilli sauce is absolute perfection! The patty was perfectly spiced and stayed juicy all the way through. If you enjoy a bold flavor kick, I highly recommend adding extra jalapeños to take it up a notch. 10/10 from me!",
+    "author": "aditya gogia",
+    "authorId": "1790427398247",
+    "createdAt": "2026-09-28T19:12:25.246Z",
+    "updatedAt": "2026-09-28T19:12:25.246Z"
+  },
+  {
+    "id": "1790622330697",
+    "title": "The Ultimate Custom BrrrGrrr Combo 🍔🔥",
+    "content": "Here is my go-to custom burger creation: Start with the base brioche bun, add a Paneer Patty, loaded Grilled Mushrooms, extra Cheddar Cheese, and top it all off with Special Sauce and Jalapeños. It gives the perfect mix of creamy, smoky, and spicy in every single bite. What’s your favorite custom combination?",
+    "author": "Harshita",
+    "authorId": "1790622299119",
+    "createdAt": "2026-09-28T19:05:30.697Z",
+    "updatedAt": "2026-09-28T19:05:30.697Z"
+  },
+  {
+    "id": "1790427478342",
+    "title": "burger bites",
+    "content": "hello, this is aditya",
+    "author": "aditya gogia",
+    "authorId": "1790427398247",
+    "createdAt": "2026-09-26T12:57:58.342Z",
+    "updatedAt": "2026-09-26T12:57:58.342Z"
+  },
+  {
+    "id": "1790360470923",
+    "title": "First Post",
+    "content": "hello, this is my first blog",
+    "author": "Harshita Gogia",
+    "authorId": "1790360459894",
+    "createdAt": "2026-09-25T18:21:10.923Z",
+    "updatedAt": "2026-09-25T18:21:10.923Z"
+  }
+]
