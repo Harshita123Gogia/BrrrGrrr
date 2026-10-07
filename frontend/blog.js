@@ -1,5 +1,7 @@
 "use strict";
 
+/* BrrrGrrr blog.js: edit/delete fix v2026-10-07 */
+
 /* =========================================
    BrrrGrrr Blog Application
    ========================================= */
@@ -136,6 +138,7 @@ function initializeDOMReferences() {
 ========================================= */
 
 function escapeHTML(value) {
+
     if (value === null || value === undefined) {
         return "";
     }
@@ -260,7 +263,7 @@ function getErrorMessage(error) {
     }
 
     if (error instanceof TypeError) {
-        return "Unable to connect to the server. Please try again.";
+        return "Unable to connect to the server. Please try again";
     }
 
     return (
@@ -285,7 +288,9 @@ function getApiMessage(data, fallback) {
 
 function getScrollBehavior() {
     return window.matchMedia &&
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        window.matchMedia(
+            "(prefers-reduced-motion: reduce)"
+        ).matches
         ? "auto"
         : "smooth";
 }
@@ -295,7 +300,11 @@ function getScrollBehavior() {
    3. API REQUEST HELPER
 ========================================= */
 
-async function apiRequest(endpoint, options = {}) {
+async function apiRequest(
+    endpoint,
+    options = {}
+) {
+
     const controller = new AbortController();
 
     const timeoutId = setTimeout(
@@ -305,7 +314,9 @@ async function apiRequest(endpoint, options = {}) {
         CONFIG.requestTimeout
     );
 
-    const headers = new Headers(options.headers || {});
+    const headers = new Headers(
+        options.headers || {}
+    );
 
     const requestOptions = {
         ...options,
@@ -313,34 +324,65 @@ async function apiRequest(endpoint, options = {}) {
         headers
     };
 
+
+    /*
+     * JSON request body.
+     */
     if (
         requestOptions.body &&
         typeof requestOptions.body === "object" &&
         !(requestOptions.body instanceof FormData) &&
         !(requestOptions.body instanceof Blob)
     ) {
-        requestOptions.body = JSON.stringify(requestOptions.body);
+
+        requestOptions.body =
+            JSON.stringify(requestOptions.body);
     }
 
+
+    /*
+     * Add JSON content type automatically.
+     */
     if (
         requestOptions.body &&
         !(requestOptions.body instanceof FormData) &&
         !headers.has("Content-Type")
     ) {
-        headers.set("Content-Type", "application/json");
+
+        headers.set(
+            "Content-Type",
+            "application/json"
+        );
     }
 
+
+    /*
+     * Only protected requests receive
+     * the authentication token.
+     *
+     * This prevents public API calls such
+     * as GET /posts from being treated as
+     * authenticated requests unnecessarily.
+     */
     if (options.auth === true) {
+
         const token = getAuthToken();
+
         if (token) {
-            headers.set("Authorization", `Bearer ${token}`);
+
+            headers.set(
+                "Authorization",
+                `Bearer ${token}`
+            );
         }
     }
+
 
     try {
         const response = await fetch(`${API}${endpoint}`, requestOptions);
         const data = await getResponseData(response);
-        return { response, data };
+        return {
+            response, data};
     } finally {
         clearTimeout(timeoutId);
     }
@@ -352,30 +394,41 @@ async function apiRequest(endpoint, options = {}) {
 ========================================= */
 
 async function getResponseData(response) {
-    const contentType = response.headers.get("content-type") || "";
+    const contentType = response.headers.get( "content-type") || "";
 
+    /*
+     * Read text first so the app can handle
+     * JSON responses even when the server
+     * sends an imperfect Content-Type header.
+     */
     try {
         const text = await response.text();
         if (!text) {
             return {};
         }
-
-        if (contentType.includes("application/json")) {
+        if ( contentType.includes( "application/json")) {
             try {
                 return JSON.parse(text);
             } catch (error) {
-                console.warn("Server returned invalid JSON:", error);
+                console.warn( "Server returned invalid JSON:", error);
                 return {};
             }
         }
 
+
+        /*
+         * Some development servers may forget
+         * the JSON content type.
+         */
         try {
             return JSON.parse(text);
         } catch {
-            return { message: text };
+            return {
+                message: text
+            };
         }
     } catch (error) {
-        console.error("Unable to read server response:", error);
+        console.error( "Unable to read server response:", error);
         return {};
     }
 }
@@ -386,51 +439,59 @@ async function getResponseData(response) {
 ========================================= */
 
 function initBlogNavigation() {
-    const currentPage = window.location.pathname.split("/").pop() || "blog.html";
+    const currentPage = window.location.pathname.split("/").pop() ||"blog.html";
     const navLinks = document.querySelectorAll("nav a, .quick-links-nav a");
+    navLinks.forEach(
+        function(link) {
+            const href = link.getAttribute("href");
+            if (!href) {
+                return;
+            }
+            const cleanHref = href.split("#")[0];
+            const isBlogLink = cleanHref === "blog.html" || cleanHref.endsWith("/blog.html");
+            if (currentPage === "blog.html" && isBlogLink) {
+                link.classList.add("active");
+                link.setAttribute( "aria-current", "page");
+            }
 
-    navLinks.forEach(function(link) {
-        const href = link.getAttribute("href");
-        if (!href) {
-            return;
+            if (href.startsWith("#")) {
+                link.addEventListener("click",
+                    function(event) {
+                        let target = null;
+                        try {
+                            target = document.querySelector(href);
+                        } catch (error) {
+                            console.warn("Invalid navigation target:", href);
+                            return;
+                        }
+                        if (!target) {
+                            return;
+                        }
+                        event.preventDefault();
+                        target.scrollIntoView({
+                            behavior:
+                                getScrollBehavior(),
+                            block: "start"
+                        });
+
+                        try {
+                            history.replaceState(
+                                null,
+                                "",
+                                href
+                            );
+
+                        } catch (error) {
+                            console.warn(
+                                "Unable to update URL:",
+                                error
+                            );
+                        }
+                    }
+                );
+            }
         }
-
-        const cleanHref = href.split("#")[0];
-        const isBlogLink = cleanHref === "blog.html" || cleanHref.endsWith("/blog.html");
-
-        if (currentPage === "blog.html" && isBlogLink) {
-            link.classList.add("active");
-            link.setAttribute("aria-current", "page");
-        }
-
-        if (href.startsWith("#")) {
-            link.addEventListener("click", function(event) {
-                let target = null;
-                try {
-                    target = document.querySelector(href);
-                } catch (error) {
-                    console.warn("Invalid navigation target:", href);
-                    return;
-                }
-
-                if (!target) {
-                    return;
-                }
-
-                event.preventDefault();
-                target.scrollIntoView({
-                    behavior: getScrollBehavior(),
-                    block: "start"
-                });
-
-                try {
-                    history.replaceState(null, "", href);
-                } catch (error) {
-                    console.warn("Unable to update URL:", error);
-                }
-            });
-        }
-    });
+    );
 }
 
 
@@ -442,45 +503,47 @@ function updateCartCount() {
     if (!cartCountElement) {
         return;
     }
-
     try {
-        const storedCart = localStorage.getItem(STORAGE_KEYS.cart);
-        const cart = storedCart ? JSON.parse(storedCart) : [];
-
+        const storedCart = localStorage.getItem( STORAGE_KEYS.cart);
+        const cart = storedCart? JSON.parse(storedCart): [];
         if (!Array.isArray(cart)) {
             cartCountElement.textContent = "0";
             return;
         }
-
-        const totalCount = cart.reduce(function(sum, item) {
-            const quantity = Number(item?.quantity);
-            if (!Number.isFinite(quantity) || quantity <= 0) {
-                return sum;
-            }
-            return sum + Math.floor(quantity);
-        }, 0);
+        const totalCount = cart.reduce(
+                function(sum, item) {
+                    const quantity = Number( item?.quantity);
+                    if (!Number.isFinite(quantity) || quantity <= 0) {
+                        return sum;
+                    }
+                    return (sum + Math.floor(quantity));
+                },
+                0
+            );
 
         cartCountElement.textContent = String(totalCount);
     } catch (error) {
-        console.error("Unable to read cart:", error);
+        console.error("Unable to read cart:",error);
         cartCountElement.textContent = "0";
     }
 }
-
 
 /* =========================================
    7. STORAGE SYNC
 ========================================= */
 
-window.addEventListener("storage", function(event) {
-    if (event.key === STORAGE_KEYS.cart || event.key === null) {
-        updateCartCount();
-    }
+window.addEventListener(
+    "storage",
+    function(event) {
+        if ( event.key === STORAGE_KEYS.cart || event.key === null) {
+            updateCartCount();
+        }
 
-    if (event.key === STORAGE_KEYS.token || event.key === null) {
-        checkAuthStatus();
+        if ( event.key === STORAGE_KEYS.token || event.key === null) {
+            checkAuthStatus();
+        }
     }
-});
+);
 
 
 /* =========================================
@@ -489,7 +552,6 @@ window.addEventListener("storage", function(event) {
 
 function checkAuthStatus() {
     const token = getAuthToken();
-
     if (token) {
         if (authStatusText) {
             authStatusText.textContent = "You are logged in. You can create and manage your posts.";
@@ -506,6 +568,7 @@ function checkAuthStatus() {
         if (loginBtn) {
             loginBtn.hidden = true;
         }
+
     } else {
         if (authStatusText) {
             authStatusText.textContent = "Sign up or log in to create and manage your posts.";
@@ -530,7 +593,6 @@ function checkAuthStatus() {
 
 function updatePostEditorState() {
     const disabled = postSaving;
-
     if (postTitleInput) {
         postTitleInput.disabled = disabled;
     }
@@ -553,17 +615,16 @@ function updatePostEditorState() {
    9. AUTH MESSAGES
 ========================================= */
 
-function showAuthMessage(message, type = "info") {
+function showAuthMessage( message, type = "info") {
     if (!authFormMessage) {
         return;
     }
 
     authFormMessage.hidden = false;
     authFormMessage.textContent = String(message || "");
-    authFormMessage.className = `status-message ${type}`;
-    authFormMessage.setAttribute("role", type === "error" ? "alert" : "status");
+    authFormMessage.className =`status-message ${type}`;
+    authFormMessage.setAttribute( "role", type === "error"? "alert" : "status");
 }
-
 
 function clearAuthMessage() {
     if (!authFormMessage) {
@@ -572,7 +633,7 @@ function clearAuthMessage() {
 
     authFormMessage.hidden = true;
     authFormMessage.textContent = "";
-    authFormMessage.className = "status-message";
+    authFormMessage.className ="status-message";
     authFormMessage.removeAttribute("role");
 }
 
@@ -582,10 +643,9 @@ function clearAuthMessage() {
 ========================================= */
 
 function validateSignupFields() {
-    const name = nameInput ? nameInput.value.trim() : "";
-    const email = emailInput ? normalizeEmail(emailInput.value) : "";
-    const password = passwordInput ? passwordInput.value : "";
-
+    const name = nameInput ? nameInput.value.trim(): "";
+    const email = emailInput ? normalizeEmail(emailInput.value): "";
+    const password = passwordInput ? passwordInput.value: "";
     if (name.length < CONFIG.minimumNameLength) {
         const message = "Please enter your name.";
         showAuthMessage(message, "error");
@@ -596,16 +656,16 @@ function validateSignupFields() {
 
     if (!isValidEmail(email)) {
         const message = "Please enter a valid email address.";
-        showAuthMessage(message, "error");
+        showAuthMessage(message,"error");
         showMessage(message, "error");
         emailInput?.focus();
         return false;
     }
 
     if (password.length < CONFIG.minimumPasswordLength) {
-        const message = `Password must be at least ${CONFIG.minimumPasswordLength} characters.`;
+        const message =`Password must be at least ${CONFIG.minimumPasswordLength} characters.`;
         showAuthMessage(message, "error");
-        showMessage(message, "error");
+        showMessage(message,"error");
         passwordInput?.focus();
         return false;
     }
@@ -615,25 +675,24 @@ function validateSignupFields() {
 
 
 function validateLoginFields() {
-    const email = emailInput ? normalizeEmail(emailInput.value) : "";
-    const password = passwordInput ? passwordInput.value : "";
-
+    const email = emailInput? normalizeEmail(emailInput.value): "";
+    const password = passwordInput? passwordInput.value: "";
     if (!isValidEmail(email)) {
         const message = "Please enter a valid email address.";
-        showAuthMessage(message, "error");
-        showMessage(message, "error");
+        showAuthMessage(message,"error");
+        showMessage(message,"error");
         emailInput?.focus();
         return false;
     }
 
+
     if (!password) {
         const message = "Please enter your password.";
-        showAuthMessage(message, "error");
-        showMessage(message, "error");
+        showAuthMessage(message,"error");
+        showMessage(message,"error");
         passwordInput?.focus();
         return false;
     }
-
     return true;
 }
 
@@ -646,15 +705,13 @@ function rememberButtonMarkup(button) {
     if (!button) {
         return;
     }
-
     if (!button.dataset.defaultMarkup) {
         button.dataset.defaultMarkup = button.innerHTML;
     }
 }
 
-
 function restoreButtonMarkup(button) {
-    if (!button || !button.dataset.defaultMarkup) {
+    if (!button ||!button.dataset.defaultMarkup) {
         return;
     }
 
@@ -665,7 +722,6 @@ function restoreButtonMarkup(button) {
 function setAuthButtonsLoading(isLoading, activeAction = "") {
     authLoading = isLoading;
     [signupBtn, loginBtn, logoutBtn].forEach(rememberButtonMarkup);
-
     if (signupBtn) {
         signupBtn.disabled = isLoading;
         if (isLoading && activeAction === "signup") {
@@ -681,10 +737,12 @@ function setAuthButtonsLoading(isLoading, activeAction = "") {
         if (isLoading && activeAction === "login") {
             loginBtn.innerHTML = `<span class="button-spinner" aria-hidden="true"></span>Logging In...`;
         }
+
         if (!isLoading) {
             restoreButtonMarkup(loginBtn);
         }
     }
+
 
     if (logoutBtn) {
         logoutBtn.disabled = isLoading;
@@ -707,29 +765,40 @@ async function signup() {
         return;
     }
 
-    const name = nameInput.value.trim();
-    const email = normalizeEmail(emailInput.value);
-    const password = passwordInput.value;
+    const name =nameInput.value.trim();
+    const email =normalizeEmail(emailInput.value);
 
-    setAuthButtonsLoading(true, "signup");
+    const password =passwordInput.value;
+
+    setAuthButtonsLoading(true,"signup");
 
     try {
-        const { response, data } = await apiRequest("/auth/signup", {
-            method: "POST",
-            body: { name, email, password }
-        });
+        const {response,data} =
+        await apiRequest("/auth/signup",
+                {
+                    method: "POST",
+                    body: {
+                        name, email, password
+                    }
+                }
+            );
 
         if (!response.ok) {
-            const errorMessage = getApiMessage(data, "Signup failed. Please try again.");
-            showAuthMessage(errorMessage, "error");
-            showMessage(errorMessage, "error");
+            const errorMessage = getApiMessage(data,"Signup failed. Please try again.");
+            showAuthMessage(errorMessage,"error");
+            showMessage(errorMessage,"error");
             return;
         }
 
-        const successMessage = "Successfully signed up! Your account has been created. You can now log in.";
-        showAuthMessage(successMessage, "success");
-        showMessage("Account created successfully!", "success");
 
+        const successMessage = "Successfully signed up! Your account has been created. You can now log in.";
+        showAuthMessage(successMessage,"success");
+        showMessage("Account created successfully!","success");
+
+
+        /*
+         * Never retain the password.
+         */
         if (nameInput) {
             nameInput.value = "";
         }
@@ -742,15 +811,19 @@ async function signup() {
             passwordInput.value = "";
         }
 
-        setTimeout(function() {
-            passwordInput?.focus();
-        }, 150);
+
+        setTimeout(
+            function() {
+                passwordInput?.focus();
+            },
+            150
+        );
 
     } catch (error) {
-        console.error("Signup error:", error);
-        const errorMessage = getErrorMessage(error);
-        showAuthMessage(errorMessage, "error");
-        showMessage(errorMessage, "error");
+        console.error("Signup error:",error);
+        const errorMessage =getErrorMessage(error);
+        showAuthMessage(errorMessage,"error");
+        showMessage(errorMessage,"error");
     } finally {
         setAuthButtonsLoading(false);
     }
@@ -772,49 +845,66 @@ async function login() {
         return;
     }
 
+
     const email = normalizeEmail(emailInput.value);
     const password = passwordInput.value;
 
-    setAuthButtonsLoading(true, "login");
-
+    setAuthButtonsLoading(true,"login");
     try {
-        const { response, data } = await apiRequest("/auth/login", {
-            method: "POST",
-            body: { email, password }
-        });
+        const {response,data} =
+            await apiRequest(
+                "/auth/login",
+                {
+                    method: "POST",
+                    body: {email,password
+                    }
+                }
+            );
 
         if (!response.ok) {
-            const errorMessage = getApiMessage(data, "Invalid email or password.");
-            showAuthMessage(errorMessage, "error");
-            showMessage(errorMessage, "error");
+            const errorMessage = getApiMessage(data,"Invalid email or password.");
+            showAuthMessage(errorMessage,"error");
+            showMessage(errorMessage,"error");
             return;
         }
 
+
+        /*
+         * Backend should return a JWT.
+         */
         if (!data.token) {
-            const errorMessage = data.message || "Login failed. No authentication token was returned by the server.";
-            showAuthMessage(errorMessage, "error");
-            showMessage(errorMessage, "error");
+            const errorMessage =data.message || "Login failed. No authentication token was returned by the server.";
+            showAuthMessage(errorMessage,"error");
+            showMessage(errorMessage,"error");
             return;
         }
+
 
         setAuthToken(data.token);
         checkAuthStatus();
+        const successMessage ="Login successful! Welcome back to BrrrGrrr.";
+        showAuthMessage(successMessage,"success");
+        showMessage("Login successful!","success");
 
-        const successMessage = "Login successful! Welcome back to BrrrGrrr.";
-        showAuthMessage(successMessage, "success");
-        showMessage("Login successful!", "success");
-
+        /*
+         * Never retain password.
+         */
         if (passwordInput) {
             passwordInput.value = "";
         }
 
+
+        /*
+         * Refresh posts.
+         */
         await loadPosts();
 
     } catch (error) {
-        console.error("Login error:", error);
+
+        console.error("Login error:",error);
         const errorMessage = getErrorMessage(error);
-        showAuthMessage(errorMessage, "error");
-        showMessage(errorMessage, "error");
+        showAuthMessage(errorMessage,"error");
+        showMessage(errorMessage,"error");
     } finally {
         setAuthButtonsLoading(false);
     }
@@ -828,12 +918,19 @@ async function login() {
 function logout() {
     clearAuthToken();
     editingId = null;
-    resetForm({ clearMessage: true });
+    resetForm({
+        clearMessage: true
+    });
     checkAuthStatus();
+    showAuthMessage(
+        "You have been logged out successfully.",
+        "success"
+    );
 
-    showAuthMessage("You have been logged out successfully.", "success");
-    showMessage("Logged out successfully.", "success");
-
+    showMessage(
+        "Logged out successfully.",
+        "success"
+    );
     loadPosts();
 }
 
@@ -845,11 +942,19 @@ function logout() {
 function handleUnauthorized() {
     clearAuthToken();
     editingId = null;
-    resetForm({ clearMessage: true });
+    resetForm({
+        clearMessage: true
+    });
     checkAuthStatus();
+    showAuthMessage(
+        "Your session has expired. Please log in again.",
+        "error"
+    );
 
-    showAuthMessage("Your session has expired. Please log in again.", "error");
-    showMessage("Your session has expired. Please log in again.", "error");
+    showMessage(
+        "Your session has expired. Please log in again.",
+        "error"
+    );
 }
 
 
@@ -859,46 +964,55 @@ function handleUnauthorized() {
 
 function initializeAuthEvents() {
     if (signupBtn) {
-        signupBtn.addEventListener("click", function(event) {
-            event.preventDefault();
-            signup();
-        });
+        signupBtn.addEventListener("click",function(event) {
+                event.preventDefault();
+                signup();
+            }
+        );
     }
+
 
     if (loginBtn) {
-        loginBtn.addEventListener("click", function(event) {
-            event.preventDefault();
-            login();
-        });
-    }
-
-    if (logoutBtn) {
-        logoutBtn.addEventListener("click", function(event) {
-            event.preventDefault();
-            logout();
-        });
-    }
-
-    if (authForm) {
-        authForm.addEventListener("submit", function(event) {
-            event.preventDefault();
-            login();
-        });
-
-        authForm.addEventListener("keydown", function(event) {
-            if (event.key !== "Enter") {
-                return;
-            }
-
-            if (event.target.tagName === "BUTTON") {
-                return;
-            }
-
-            if (event.target === emailInput || event.target === passwordInput) {
+        loginBtn.addEventListener("click",function(event) {
                 event.preventDefault();
                 login();
             }
-        });
+        );
+    }
+
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click",function(event) {
+                event.preventDefault();
+                logout();
+            }
+        );
+    }
+
+    if (authForm) {
+        authForm.addEventListener("submit",function(event) {
+                event.preventDefault();
+                login();
+            }
+        );
+
+
+        authForm.addEventListener("keydown",function(event) {
+                if (event.key !== "Enter") {
+                    return;
+                }
+
+
+                if (event.target.tagName ==="BUTTON") {
+                    return;
+                }
+
+                if (event.target === emailInput || event.target === passwordInput) {
+                    event.preventDefault();
+                    login();
+                }
+            }
+        );
     }
 }
 
@@ -913,47 +1027,57 @@ async function loadPosts() {
     }
 
     const requestId = ++postsRequestId;
-    const query = searchInput ? searchInput.value.trim() : "";
-
+    const query =searchInput? searchInput.value.trim(): "";
     postsLoading = true;
     setPostsLoading(true);
-
     try {
-        const endpoint = `/posts?search=${encodeURIComponent(query)}`;
-        const { response, data } = await apiRequest(endpoint);
+        const endpoint =`/posts?search=${encodeURIComponent(query)}`;
+        const {
+            response, data} = await apiRequest(endpoint);
 
-        if (requestId !== postsRequestId) {
+
+        /*
+         * Ignore stale search responses.
+         */
+        if ( requestId !== postsRequestId) {
             return;
         }
 
+
         if (response.status === 401 || response.status === 403) {
-            throw new Error(getApiMessage(data, "The blog server rejected the request."));
+            throw new Error(
+                getApiMessage(data,"The blog server rejected the request.")
+            );
         }
+
 
         if (!response.ok) {
-            throw new Error(getApiMessage(data, "Unable to load posts."));
+            throw new Error(
+                getApiMessage(data,"Unable to load posts.")
+            );
         }
 
-        const posts = Array.isArray(data.posts) ? data.posts : Array.isArray(data) ? data : [];
-        postsData = Object.create(null);
+
+        const posts = Array.isArray(data.posts)? data.posts: Array.isArray(data)? data: [];
+        postsData =Object.create(null);
         const validPosts = [];
-
         posts.forEach(function(post) {
-            const postId = getPostId(post);
-            if (postId === null) {
-                return;
-            }
+                const postId =getPostId(post);
+                if (postId === null) {
+                    return;
+                }
 
-            postsData[postId] = post;
-            validPosts.push({ post, postId });
-        });
+                postsData[postId] = post;
+                validPosts.push({post,postId});
+            }
+        );
+
 
         updatePostCount(validPosts.length);
-
         if (query) {
-            updateSearchStatus(validPosts.length ? `${validPosts.length} post${validPosts.length === 1 ? "" : "s"} found` : "No posts found");
+            updateSearchStatus(validPosts.length? `${validPosts.length} post${validPosts.length === 1 ? "" : "s"} found`: "No posts found");
         } else {
-            updateSearchStatus(validPosts.length ? `Showing ${validPosts.length} post${validPosts.length === 1 ? "" : "s"}` : "No posts yet");
+            updateSearchStatus(validPosts.length? `Showing ${validPosts.length} post${validPosts.length === 1 ? "" : "s"}`: "No posts yet");
         }
 
         if (validPosts.length === 0) {
@@ -961,26 +1085,30 @@ async function loadPosts() {
             return;
         }
 
-        postsContainer.innerHTML = validPosts
-            .map(function({ post, postId }) {
-                return renderPostCard(post, postId);
-            })
-            .join("");
 
-        postsContainer.setAttribute("aria-busy", "false");
+        postsContainer.innerHTML = validPosts
+                .map(function({post,postId}) {
+                        return renderPostCard(post,postId);
+                    }
+                )
+                .join("");
+
+        postsContainer.setAttribute("aria-busy","false");
     } catch (error) {
-        if (requestId !== postsRequestId) {
+        if (
+            requestId !== postsRequestId
+        ) {
             return;
         }
 
-        console.error("Load posts error:", error);
+        console.error("Load posts error:",error);
         updatePostCount(0);
         updateSearchStatus("Unable to load posts");
         renderPostsError(error);
     } finally {
         if (requestId === postsRequestId) {
             postsLoading = false;
-            postsContainer?.setAttribute("aria-busy", "false");
+            postsContainer?.setAttribute( "aria-busy", "false");
         }
     }
 }
@@ -990,35 +1118,36 @@ async function loadPosts() {
    18. POST CARD
 ========================================= */
 
-function renderPostCard(post, postId) {
+function renderPostCard(post,postId) {
     const title = post.title || "Untitled Post";
     const content = post.content || "";
     const author = getAuthorName(post);
     const date = formatDate(post.createdAt || post.updatedAt);
-
     return `<article class="blog-card post-card" data-post-id="${escapeHTML(postId)}">
             <div class="post-card-top">
                 <div class="post-category-icon" aria-hidden="true">
-                    <img src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=400&q=85" alt="" class="post-burger-image">
-                </div>
-                <div class="post-meta">
-                    <span class="post-author">By ${escapeHTML(author)}</span>
-                    ${date ? `<span class="post-date" aria-label="Published ${escapeHTML(date)}">${escapeHTML(date)}</span>` : ""}
-                </div>
-            </div>
-            <h3 class="post-title">${escapeHTML(title)}</h3>
-            <p class="post-text">${escapeHTML(content)}</p>
-            <div class="post-card-footer">
-                <div class="post-buttons">
-                    <button type="button" class="btn edit-post-btn" data-post-id="${escapeHTML(postId)}" aria-label="Edit ${escapeHTML(title)}">
-                        <i class="fas fa-pen" aria-hidden="true"></i> Edit
-                    </button>
-                    <button type="button" class="btn secondary delete-post-btn" data-post-id="${escapeHTML(postId)}" aria-label="Delete ${escapeHTML(title)}">
-                        <i class="fas fa-trash" aria-hidden="true"></i> Delete
-                    </button>
-                </div>
-            </div>
-        </article>`;
+    <img src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=400&q=85"
+        alt=""
+        class="post-burger-image">
+</div>
+<div class="post-meta">
+<span class="post-author"> By ${escapeHTML(author)}</span>
+${
+date ? `<span class="post-date" aria-label="Published ${escapeHTML(date)}">${escapeHTML(date)}</span>`: ""
+}
+</div>
+</div>
+<h3 class="post-title"> ${escapeHTML(title)}</h3>
+<p class="post-text"> ${escapeHTML(content)}</p>
+<div class="post-card-footer">
+<div class="post-buttons">
+<button type="button" class="btn edit-post-btn" data-post-id="${escapeHTML(postId)}" aria-label="Edit ${escapeHTML(title)}">
+<i class="fas fa-pen" aria-hidden="true"></i> Edit</button>
+<button type="button" class="btn secondary delete-post-btn" data-post-id="${escapeHTML(postId)}" aria-label="Delete ${escapeHTML(title)}">
+<i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
+</div>
+</div>
+</article>`;
 }
 
 
@@ -1031,16 +1160,16 @@ function setPostsLoading(isLoading) {
         return;
     }
 
-    postsContainer.setAttribute("aria-busy", isLoading ? "true" : "false");
 
+    postsContainer.setAttribute("aria-busy", isLoading ? "true" : "false");
     if (!isLoading) {
         return;
     }
-
+    
+    
     postsContainer.innerHTML = `<div class="loading-state" role="status" aria-live="polite">
-        <div class="loading-spinner" aria-hidden="true"></div>
-        <p>Loading posts...</p>
-    </div>`;
+    <div class="loading-spinner" aria-hidden="true"></div>
+            <p> Loading posts... </p></div>`;
 }
 
 
@@ -1053,19 +1182,18 @@ function renderPostsError(error) {
         return;
     }
 
+
     const message = getErrorMessage(error);
 
     postsContainer.innerHTML = `<div class="error-state" role="alert">
-        <div class="error-icon" aria-hidden="true">⚠️</div>
-        <h3>Unable to load posts</h3>
-        <p>${escapeHTML(message)}</p>
-        <button type="button" class="btn" id="retryPostsBtn">
-            <i class="fas fa-rotate-right" aria-hidden="true"></i> Try Again
-        </button>
-    </div>`;
+            <div class="error-icon" aria-hidden="true"> ⚠️</div>
+            <h3> Unable to load posts </h3>
+            <p> ${escapeHTML(message)} </p>
+            <button type="button" class="btn" id="retryPostsBtn">
+                <i class="fas fa-rotate-right" aria-hidden="true"></i> Try Again </button></div>`;
 
-    document.getElementById("retryPostsBtn")?.addEventListener("click", loadPosts);
-    postsContainer.setAttribute("aria-busy", "false");
+    document.getElementById("retryPostsBtn") ?.addEventListener( "click", loadPosts);
+    postsContainer.setAttribute( "aria-busy", "false");
 }
 
 
@@ -1078,25 +1206,27 @@ function renderEmptyPosts(query = "") {
         return;
     }
 
+
     if (query) {
         postsContainer.innerHTML = `<div class="empty-state">
-            <div class="empty-state-icon" aria-hidden="true">🔍</div>
-            <h3>No matching posts</h3>
-            <p>We couldn't find any posts matching "${escapeHTML(query)}".</p>
-            <button type="button" class="btn" id="clearEmptySearchBtn">Clear Search</button>
-        </div>`;
+                <div class="empty-state-icon" aria-hidden="true"> 🔍</div>
+                <h3> No matching posts </h3>
+                <p> We couldn't find any posts matching"${escapeHTML(query)}".</p>
+                <button type="button" class="btn" id="clearEmptySearchBtn"> Clear Search</button></div>`;
 
-        document.getElementById("clearEmptySearchBtn")?.addEventListener("click", clearSearch);
+        document.getElementById("clearEmptySearchBtn") ?.addEventListener("click", clearSearch);
     } else {
         postsContainer.innerHTML = `<div class="empty-state">
-            <div class="empty-state-icon" aria-hidden="true">🍔</div>
-            <h3>No posts yet</h3>
-            <p>Be the first to share a burger story with the BrrrGrrr community.</p>
-            <a href="#create-post-title" class="btn">Write the First Post</a>
-        </div>`;
+                <div class="empty-state-icon" aria-hidden="true"> 🍔 </div>
+                <h3> No posts yet</h3>
+                <p> Be the first to share a burger story with the BrrrGrrr community.</p>
+                <a href="#create-post-title" class="btn"> Write the First Post</a>
+            </div>
+        `;
     }
 
-    postsContainer.setAttribute("aria-busy", "false");
+
+    postsContainer.setAttribute("aria-busy","false");
 }
 
 
@@ -1109,10 +1239,11 @@ function updatePostCount(count) {
         return;
     }
 
-    const numericCount = Number(count);
-    const safeCount = Number.isFinite(numericCount) ? Math.max(0, Math.floor(numericCount)) : 0;
 
-    postCount.textContent = `${safeCount} post${safeCount === 1 ? "" : "s"}`;
+    const numericCount = Number(count);
+    const safeCount = Number.isFinite(numericCount) ? Math.max( 0, Math.floor(numericCount)): 0;
+
+    postCount.textContent =`${safeCount} post${safeCount === 1 ? "" : "s"}`;
 }
 
 
@@ -1125,6 +1256,7 @@ function updateSearchStatus(message) {
         return;
     }
 
+
     searchStatus.textContent = String(message || "");
 }
 
@@ -1136,30 +1268,33 @@ function updateSearchStatus(message) {
 function validatePostForm() {
     const title = postTitleInput ? postTitleInput.value.trim() : "";
     const content = postContentInput ? postContentInput.value.trim() : "";
-
-    if (title.length < CONFIG.minimumTitleLength) {
-        showFormMessage("Please enter a meaningful post title.", "error");
+    if ( title.length < CONFIG.minimumTitleLength) {
+        showFormMessage("Please enter a meaningful post title.","error");
         postTitleInput?.focus();
         return false;
     }
 
-    if (title.length > CONFIG.maximumTitleLength) {
-        showFormMessage(`Post title cannot exceed ${CONFIG.maximumTitleLength} characters.`, "error");
+
+    if ( title.length > CONFIG.maximumTitleLength) {
+        showFormMessage( `Post title cannot exceed ${CONFIG.maximumTitleLength} characters.`, "error");
         postTitleInput?.focus();
         return false;
     }
 
-    if (content.length < CONFIG.minimumContentLength) {
-        showFormMessage("Please write a little more content before publishing.", "error");
+
+    if ( content.length < CONFIG.minimumContentLength) {
+        showFormMessage( "Please write a little more content before publishing.", "error");
         postContentInput?.focus();
         return false;
     }
 
-    if (content.length > CONFIG.maximumContentLength) {
-        showFormMessage(`Post content cannot exceed ${CONFIG.maximumContentLength} characters.`, "error");
+
+    if ( content.length > CONFIG.maximumContentLength) {
+        showFormMessage(`Post content cannot exceed ${CONFIG.maximumContentLength} characters.`,"error");
         postContentInput?.focus();
         return false;
     }
+
 
     return true;
 }
@@ -1174,74 +1309,89 @@ async function savePost(event) {
         event.preventDefault();
     }
 
+
     if (postSaving) {
         return;
     }
 
+
     const token = getAuthToken();
 
+
     if (!token) {
-        showFormMessage("Please log in before creating or editing a post.", "error");
-        showMessage("Please log in first.", "error");
+        showFormMessage("Please log in before creating or editing a post.","error");
+        showMessage("Please log in first.","error");
         emailInput?.focus();
         return;
     }
+
 
     if (!validatePostForm()) {
         return;
     }
 
+
     const title = postTitleInput.value.trim();
     const content = postContentInput.value.trim();
     const isEditing = editingId !== null;
-    const endpoint = isEditing ? `/posts/${encodeURIComponent(editingId)}` : "/posts";
+    const endpoint = isEditing ? `/posts/${encodeURIComponent(editingId)}`: "/posts";
     const method = isEditing ? "PUT" : "POST";
-
     setPostSaving(true);
 
     try {
-        const { response, data } = await apiRequest(endpoint, {
-            method,
-            auth: true,
-            body: { title, content }
-        });
+        const {
+            response, data} =
+            await apiRequest( endpoint,
+                {
+                    method,
+                    auth: true,
 
-        if (response.status === 401 || response.status === 403) {
+                    body: {
+                        title,
+                        content
+                    }
+                }
+            );
+
+
+        if (response.status === 401 ||  response.status === 403) {
             handleUnauthorized();
             return;
         }
 
+
         if (!response.ok) {
-            const message = getApiMessage(data, "Unable to save the post.");
+            const message = getApiMessage( data, "Unable to save the post.");
             showFormMessage(message, "error");
-            showMessage(message, "error");
+            showMessage(message,"error");
             return;
         }
 
-        const successMessage = getApiMessage(
-            data,
-            isEditing ? "Post updated successfully." : "Post published successfully."
-        );
 
-        resetForm({ clearMessage: false });
-        showFormMessage(successMessage, "success");
+        const successMessage =
+            getApiMessage(data,isEditing ? "Post updated successfully." : "Post published successfully.");
+
+        resetForm({clearMessage: false});
+        showFormMessage(successMessage,"success");
         showMessage(successMessage, "success");
 
         await loadPosts();
 
         const postsSection = document.querySelector(".posts-section");
+
         if (postsSection) {
             postsSection.scrollIntoView({
-                behavior: getScrollBehavior(),
+                behavior:
+                    getScrollBehavior(),
                 block: "start"
             });
         }
 
     } catch (error) {
-        console.error("Save post error:", error);
-        const message = getErrorMessage(error);
-        showFormMessage(message, "error");
-        showMessage(message, "error");
+        console.error("Save post error:",error);
+        const message =getErrorMessage(error);
+        showFormMessage(message,"error");
+        showMessage(message,"error");
     } finally {
         setPostSaving(false);
     }
@@ -1255,15 +1405,15 @@ async function savePost(event) {
 function setPostSaving(isSaving) {
     postSaving = isSaving;
     updatePostEditorState();
-
     if (!savePostButton) {
         return;
     }
 
+
     if (isSaving) {
         rememberButtonMarkup(savePostButton);
         savePostButton.innerHTML = `<span class="button-spinner" aria-hidden="true"></span> Saving...`;
-        savePostButton.setAttribute("aria-busy", "true");
+        savePostButton.setAttribute("aria-busy","true");
     } else {
         savePostButton.removeAttribute("aria-busy");
         updateSaveButtonText();
@@ -1278,36 +1428,38 @@ function setPostSaving(isSaving) {
 function editPost(id) {
     const postId = String(id);
     const post = postsData[postId];
-
     if (!post) {
         showMessage("Post could not be found.", "error");
         return;
     }
+
 
     if (!isLoggedIn()) {
         showMessage("Please log in first.", "error");
         return;
     }
 
-    editingId = postId;
 
+    editingId = postId;
     if (postTitleInput) {
         postTitleInput.value = post.title || "";
     }
+
 
     if (postContentInput) {
         postContentInput.value = post.content || "";
     }
 
+
     updateCharacterCount();
     updateSaveButtonText();
 
     showFormMessage("You are editing this post. Update the content and save your changes.", "info");
-
     if (postTitleInput) {
         postTitleInput.focus();
         postTitleInput.scrollIntoView({
-            behavior: getScrollBehavior(),
+            behavior:
+                getScrollBehavior(),
             block: "center"
         });
     }
@@ -1322,6 +1474,7 @@ function updateSaveButtonText() {
     if (!savePostButton) {
         return;
     }
+
 
     if (editingId !== null) {
         savePostButton.innerHTML = `<i class="fas fa-pen" aria-hidden="true"></i> Update Post`;
@@ -1342,47 +1495,57 @@ async function deletePost(id) {
         return;
     }
 
+
     const postId = String(id);
     const post = postsData[postId];
-
     if (!post) {
         showMessage("Post could not be found.", "error");
         return;
     }
 
+
     const title = post.title || "this post";
     const confirmed = window.confirm(`Delete "${title}"?\n\nThis action cannot be undone.`);
-
     if (!confirmed) {
         return;
     }
 
     try {
-        const { response, data } = await apiRequest(`/posts/${encodeURIComponent(postId)}`, {
-            method: "DELETE",
-            auth: true
-        });
+        const {
+            response, data} =
+            await apiRequest(
+                `/posts/${encodeURIComponent(postId)}`,
+                {
+                    method: "DELETE",
+                    auth: true
+                }
+            );
+
 
         if (response.status === 401 || response.status === 403) {
             handleUnauthorized();
             return;
         }
 
+
         if (!response.ok) {
-            const message = getApiMessage(data, "Unable to delete the post.");
-            showMessage(message, "error");
+            const message = getApiMessage(data,"Unable to delete the post.");
+            showMessage(message,"error");
             return;
         }
+
 
         if (editingId !== null && String(editingId) === postId) {
             resetForm();
         }
 
-        showMessage(getApiMessage(data, "Post deleted successfully."), "success");
+
+        showMessage(getApiMessage(data, "Post deleted successfully."),"success");
         await loadPosts();
     } catch (error) {
-        console.error("Delete post error:", error);
-        showMessage(getErrorMessage(error), "error");
+        console.error("Delete post error:",error);
+        showMessage(getErrorMessage(error),"error"
+        );
     }
 }
 
@@ -1392,13 +1555,17 @@ async function deletePost(id) {
 ========================================= */
 
 function resetForm(options = {}) {
-    const { clearMessage = true } = options;
+    const {
+        clearMessage = true
+    } = options;
+
 
     editingId = null;
 
     if (postTitleInput) {
         postTitleInput.value = "";
     }
+
 
     if (postContentInput) {
         postContentInput.value = "";
@@ -1422,11 +1589,11 @@ function updateCharacterCount() {
         return;
     }
 
-    const length = postContentInput ? postContentInput.value.length : 0;
-    postCharacterCount.textContent = `${length} / ${CONFIG.maximumContentLength}`;
 
+    const length = postContentInput ? postContentInput.value.length : 0;
+    postCharacterCount.textContent =`${length} / ${CONFIG.maximumContentLength}`;
     const isOverLimit = length > CONFIG.maximumContentLength;
-    postCharacterCount.classList.toggle("character-limit", isOverLimit);
+    postCharacterCount.classList.toggle("character-limit",isOverLimit);
     postCharacterCount.setAttribute("aria-live", "polite");
 }
 
@@ -1440,31 +1607,31 @@ function initializePostForm() {
         postForm.addEventListener("submit", savePost);
     }
 
-    if (savePostButton) {
-        savePostButton.addEventListener("click", function(event) {
-            event.preventDefault();
-            savePost(event);
-        });
-    }
 
     if (resetPostButton) {
-        resetPostButton.addEventListener("click", function(event) {
-            event.preventDefault();
-            resetForm();
-            showFormMessage("Post form has been reset.", "info");
-        });
+        resetPostButton.addEventListener(
+            "click",
+            function(event) {
+                event.preventDefault();
+                resetForm();
+                showFormMessage("Post form has been reset.", "info");
+            }
+        );
     }
+
 
     if (postContentInput) {
         postContentInput.addEventListener("input", updateCharacterCount);
     }
 
+
     if (postTitleInput) {
         postTitleInput.addEventListener("input", function() {
-            if (postFormMessage && postFormMessage.classList.contains("error")) {
-                clearFormMessage();
+                if (postFormMessage && postFormMessage.classList.contains("error")) {
+                    clearFormMessage();
+                }
             }
-        });
+        );
     }
 
     updateCharacterCount();
@@ -1472,7 +1639,7 @@ function initializePostForm() {
 
 
 /* =========================================
-   33. POST EVENTS (EVENT DELEGATION)
+   33. POST EVENTS
 ========================================= */
 
 function initializePostEvents() {
@@ -1480,26 +1647,35 @@ function initializePostEvents() {
         return;
     }
 
+    /*
+     * Posts are rendered dynamically, so use event delegation.
+     * This is the single source of truth for Edit/Delete clicks.
+     * It does not depend on inline onclick attributes.
+     */
     postsContainer.addEventListener("click", function(event) {
-        const editButton = event.target.closest(".edit-post-btn");
-        const deleteButton = event.target.closest(".delete-post-btn");
+        const button = event.target.closest(".edit-post-btn, .delete-post-btn");
 
-        if (editButton) {
-            event.preventDefault();
-            const postId = editButton.getAttribute("data-post-id");
-            if (postId) {
-                editPost(postId);
-            }
+        if (!button || !postsContainer.contains(button)) {
             return;
         }
 
-        if (deleteButton) {
-            event.preventDefault();
-            const postId = deleteButton.getAttribute("data-post-id");
-            if (postId) {
-                deletePost(postId);
-            }
+        event.preventDefault();
+        event.stopPropagation();
+
+        const postId = button.getAttribute("data-post-id");
+
+        if (!postId) {
+            showMessage("This post does not have a valid ID.", "error");
             return;
+        }
+
+        if (button.classList.contains("edit-post-btn")) {
+            editPost(postId);
+            return;
+        }
+
+        if (button.classList.contains("delete-post-btn")) {
+            deletePost(postId);
         }
     });
 }
@@ -1514,28 +1690,42 @@ function initializeSearch() {
         return;
     }
 
-    searchInput.addEventListener("input", function() {
-        updateClearSearchButton();
 
-        clearTimeout(searchDebounceTimer);
-        const query = searchInput.value.trim();
+    searchInput.addEventListener(
+        "input",
+        function() {
 
-        if (query) {
-            updateSearchStatus(`Searching for "${query}"...`);
-        } else {
-            updateSearchStatus("Showing all posts...");
+            updateClearSearchButton();
+
+            clearTimeout(searchDebounceTimer);
+            const query = searchInput.value.trim();
+            if (query) {
+                updateSearchStatus(`Searching for "${query}"...`);
+            } else {
+                updateSearchStatus("Showing all posts...");
+            }
+
+
+            searchDebounceTimer =
+                setTimeout(
+                    function() {
+                        loadPosts();
+                    },
+                    CONFIG.searchDelay
+                );
         }
+    );
 
-        searchDebounceTimer = setTimeout(function() {
-            loadPosts();
-        }, CONFIG.searchDelay);
-    });
 
-    searchInput.addEventListener("keydown", function(event) {
-        if (event.key === "Escape") {
-            clearSearch();
+    searchInput.addEventListener(
+        "keydown",
+        function(event) {
+            if (event.key === "Escape") {
+                clearSearch();
+            }
         }
-    });
+    );
+
 
     if (clearSearchButton) {
         clearSearchButton.addEventListener("click", clearSearch);
@@ -1554,7 +1744,9 @@ function updateClearSearchButton() {
         return;
     }
 
-    const hasSearch = Boolean(searchInput && searchInput.value.trim());
+
+    const hasSearch =
+        Boolean(searchInput && searchInput.value.trim());
 
     clearSearchButton.hidden = !hasSearch;
     clearSearchButton.setAttribute("aria-hidden", hasSearch ? "false" : "true");
@@ -1569,6 +1761,7 @@ function clearSearch() {
     if (!searchInput) {
         return;
     }
+
 
     searchInput.value = "";
     updateClearSearchButton();
@@ -1591,7 +1784,7 @@ function showFormMessage(message, type = "info") {
 
     postFormMessage.hidden = false;
     postFormMessage.textContent = String(message || "");
-    postFormMessage.className = `status-message ${type}`;
+    postFormMessage.className =`status-message ${type}`;
     postFormMessage.setAttribute("role", type === "error" ? "alert" : "status");
 }
 
@@ -1603,7 +1796,7 @@ function clearFormMessage() {
 
     postFormMessage.hidden = true;
     postFormMessage.textContent = "";
-    postFormMessage.className = "status-message";
+    postFormMessage.className ="status-message";
     postFormMessage.removeAttribute("role");
 }
 
@@ -1617,11 +1810,12 @@ function showMessage(message, type = "success") {
         return;
     }
 
+
     let toast = document.getElementById("toast-notification");
     if (!toast) {
         toast = document.createElement("div");
-        toast.id = "toast-notification";
-        toast.className = "toast-notification";
+        toast.id ="toast-notification";
+        toast.className ="toast-notification";
         toast.setAttribute("role", "status");
         toast.setAttribute("aria-live", "polite");
         toast.setAttribute("aria-atomic", "true");
@@ -1629,16 +1823,22 @@ function showMessage(message, type = "success") {
     }
 
     clearTimeout(toastTimeout);
-    toast.className = `toast-notification ${type}`;
+    toast.className =`toast-notification ${type}`;
     toast.textContent = String(message || "");
+    requestAnimationFrame(
+        function() {
+            toast.classList.add("show");
+        }
+    );
 
-    requestAnimationFrame(function() {
-        toast.classList.add("show");
-    });
 
-    toastTimeout = setTimeout(function() {
-        toast.classList.remove("show");
-    }, CONFIG.toastDuration);
+    toastTimeout =
+        setTimeout(
+            function() {
+                toast.classList.remove("show");
+            },
+            CONFIG.toastDuration
+        );
 }
 
 
@@ -1647,21 +1847,18 @@ function showMessage(message, type = "success") {
 ========================================= */
 
 function initializeKeyboardShortcuts() {
-    document.addEventListener("keydown", function(event) {
-        const activeElement = document.activeElement;
-        if (
-            event.key === "/" &&
-            activeElement?.tagName !== "INPUT" &&
-            activeElement?.tagName !== "TEXTAREA" &&
-            activeElement?.tagName !== "SELECT" &&
-            !activeElement?.isContentEditable
-        ) {
-            if (searchInput) {
-                event.preventDefault();
-                searchInput.focus();
+    document.addEventListener(
+        "keydown",
+        function(event) {
+            const activeElement =document.activeElement;
+            if (event.key === "/" && activeElement?.tagName !== "INPUT" && activeElement?.tagName !== "TEXTAREA" && activeElement?.tagName !== "SELECT" && !activeElement?.isContentEditable) {
+                if (searchInput) {
+                    event.preventDefault();
+                    searchInput.focus();
+                }
             }
         }
-    });
+    );
 }
 
 
@@ -1671,11 +1868,16 @@ function initializeKeyboardShortcuts() {
 
 function initializeCartNavigation() {
     const cartLinks = document.querySelectorAll('a[href*="cart"], .cart-link');
-    cartLinks.forEach(function(link) {
-        link.addEventListener("click", function() {
-            updateCartCount();
-        });
-    });
+    cartLinks.forEach(
+        function(link) {
+            link.addEventListener(
+                "click",
+                function() {
+                    updateCartCount();
+                }
+            );
+        }
+    );
 }
 
 
@@ -1684,17 +1886,37 @@ function initializeCartNavigation() {
 ========================================= */
 
 function initializeVisibilitySync() {
-    document.addEventListener("visibilitychange", function() {
-        if (document.visibilityState === "visible") {
-            updateCartCount();
-            checkAuthStatus();
+    document.addEventListener(
+        "visibilitychange",
+        function() {
+            if (document.visibilityState ==="visible") {
+                updateCartCount();
+                checkAuthStatus();
+            }
         }
-    });
+    );
 }
 
 
 /* =========================================
-   42. GLOBAL FUNCTIONS
+   42. AUTHENTICATION STATE CHECK
+========================================= */
+
+async function verifyExistingSession() {
+
+    /*
+     * No separate /me request is made because
+     * the current backend contract does not
+     * define one.
+     *
+     * Protected operations automatically
+     * detect an expired/invalid token.
+     */
+}
+
+
+/* =========================================
+   43. GLOBAL FUNCTIONS
 ========================================= */
 
 window.signup = signup;
@@ -1714,27 +1936,92 @@ window.showMessage = showMessage;
 
 
 /* =========================================
-   43. APPLICATION INITIALIZATION
+   44. APPLICATION INITIALIZATION
 ========================================= */
 
 function initializeBlog() {
+
+    /*
+     * Get DOM references first.
+     */
     initializeDOMReferences();
+
+
+    /*
+     * Navigation.
+     */
     initBlogNavigation();
+
+
+    /*
+     * Cart.
+     */
     updateCartCount();
     initializeCartNavigation();
+
+
+    /*
+     * Authentication.
+     */
     checkAuthStatus();
     initializeAuthEvents();
+
+
+    /*
+     * Blog editor.
+     */
     initializePostForm();
+
+
+    /*
+     * Search.
+     */
     initializeSearch();
+
+
+    /*
+     * Post buttons.
+     */
     initializePostEvents();
+
+
+    /*
+     * Keyboard accessibility.
+     */
     initializeKeyboardShortcuts();
+
+
+    /*
+     * Keep the page synchronized when
+     * the user switches browser tabs.
+     */
     initializeVisibilitySync();
+
+
+    /*
+     * Load current posts.
+     */
     loadPosts();
+
+
+    /*
+     * Check existing authentication state.
+     */
+    verifyExistingSession();
 }
 
 
 /* =========================================
-   44. START APPLICATION
+   GLOBAL POST ACTIONS
+========================================= */
+
+/* Explicitly expose these functions for dynamically rendered buttons. */
+window.editPost = editPost;
+window.deletePost = deletePost;
+
+
+/* =========================================
+   45. START APPLICATION
 ========================================= */
 
 if (document.readyState === "loading") {

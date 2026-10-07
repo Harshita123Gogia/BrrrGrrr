@@ -129,13 +129,13 @@ ACCOUNT / AUTH
             <i class="fas fa-user"></i></div>
             <div>
                 <h2 id="account-title"> Your Account </h2>
-                <p id="authStatusText"> Sign up or log in to create and manage your posts. </p>
+                <p id="authStatusText"> Create your BrrrGrrr account, then log in to create and manage posts.</p>
             </div>
         </div>
 
 <!-- AUTH FORM -->
 <form id="authForm" class="auth" novalidate>
-    <div class="form-group">
+    <div class="form-group" id="nameGroup">
         <label for="name"> Name </label>
         <input id="name" name="name" type="text" placeholder="Enter your name" autocomplete="name" maxlength="80">
     </div>
@@ -143,9 +143,9 @@ ACCOUNT / AUTH
         <label for="email"> Email </label>
         <input id="email" name="email" type="email" placeholder="Enter your email" autocomplete="email" maxlength="120" required>
     </div>
-    <div class="form-group">
+    <div class="form-group" id="passwordGroup">
         <label for="password"> Password </label>
-        <input id="password" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" minlength="6" maxlength="100" required>
+        <input id="password" name="password" type="password" placeholder="Enter your password" autocomplete="new-password" minlength="6" maxlength="100" required>
         <small class="field-help"> Use at least 6 characters.</small>
     </div>
     <div id="authFormMessage" class="status-message" role="status" aria-live="polite" hidden></div>
@@ -576,6 +576,6 @@ REDUCED MOTION
 BLOG JAVASCRIPT
 ====================================================== -->
 
-<script src="blog.js"></script>
+<script src="blog.js?v=20261007-edit-delete-fix"></script>
 </body>
 </html>
