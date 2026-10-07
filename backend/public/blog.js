@@ -4,7 +4,7 @@
    BrrrGrrr Blog Application
    ========================================= */
 
-const API = "http://localhost:5001/api";
+const API = "/api";
 
 const STORAGE_KEYS = {
     token: "blogToken",
@@ -261,7 +261,7 @@ function getErrorMessage(error) {
     }
 
     if (error instanceof TypeError) {
-        return "Unable to connect to the server. Make sure the BrrrGrrr backend is running on localhost:5001.";
+        return "Unable to connect to the server. Please try again";
     }
 
     return (
