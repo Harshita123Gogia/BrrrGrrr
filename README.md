@@ -151,11 +151,74 @@ The frontend communicates with the backend through the API.
 
 ### Menu
 
-![BrrrGrrr Menu](./screenshots/menu.png)
+![BrrrGrrr Menu](./screenshots/menupage1.png)
+![BrrrGrrr Menu](./screenshots/menupage2.png)
+![BrrrGrrr Menu](./screenshots/menupage3.png)
+
+### Mobile Menupage
+
+![BrrrGrrr Mobile Menupage](./screenshots/menu-mobile.png)
+![BrrrGrrr Mobile Menupage](./screenshots/menupage-mobile.png)
+![BrrrGrrr Mobile Menupage](./screenshots/menupage2-mobile.png)
+
+### Customize
+
+![BrrrGrrr Customize](./screenshots/customizepage.png)
+
+### Mobile Customizepage
+
+![BrrrGrrr Mobile Customizepage](./screenshots/customizepage-mobile.png)
+
+### Cart
+
+![BrrrGrrr Cart](./screenshots/cartpage.png)
+
+### Mobile Cart
+
+![BrrrGrrr Mobile Cart](./screenshots/cartpage-mobile.png)
+
+### Checkout
+
+![BrrrGrrr Checkout](./screenshots/checkoutpage.png)
+
+### Mobile Checkout
+
+![BrrrGrrr Mobile Checkout](./screenshots/checkoutpage-mobile.png)
+
+### About
+
+![BrrrGrrr About](./screenshots/aboutpage.png)
+
+### Mobile About
+
+![BrrrGrrr Mobile About](./screenshots/aboutpage-mobile.png)
+
 
 ### Blog
 
-![BrrrGrrr Blog](./screenshots/blog.png)
+![BrrrGrrr Blog](./screenshots/blogpage.png)
+
+### Mobile Blog
+
+![BrrrGrrr Mobile Blog](./screenshots/blog-mobile.png)
+![BrrrGrrr Mobile Blog](./screenshots/blogpage-mobile.png)
+
+### Contact Us
+
+![BrrrGrrr Contact Us](./screenshots/contactUspage.png)
+
+### Mobile Contact Us
+
+![BrrrGrrr Mobile Contact Us](./screenshots/contactUspage-mobile.png)
+
+### FooterPage
+
+![BrrrGrrr FooterPage](./screenshots/footer.png)
+
+### Mobile FooterPage
+
+![BrrrGrrr Mobile FooterPage](./screenshots/footer-mobile.png)
+
 
 > Make sure the filenames above match the actual files inside the `screenshots` folder.
 
