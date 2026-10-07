@@ -136,7 +136,6 @@ function initializeDOMReferences() {
 ========================================= */
 
 function escapeHTML(value) {
-
     if (value === null || value === undefined) {
         return "";
     }
@@ -297,7 +296,6 @@ function getScrollBehavior() {
 ========================================= */
 
 async function apiRequest(endpoint, options = {}) {
-
     const controller = new AbortController();
 
     const timeoutId = setTimeout(
@@ -315,10 +313,6 @@ async function apiRequest(endpoint, options = {}) {
         headers
     };
 
-
-    /*
-     * JSON request body.
-     */
     if (
         requestOptions.body &&
         typeof requestOptions.body === "object" &&
@@ -328,10 +322,6 @@ async function apiRequest(endpoint, options = {}) {
         requestOptions.body = JSON.stringify(requestOptions.body);
     }
 
-
-    /*
-     * Add JSON content type automatically.
-     */
     if (
         requestOptions.body &&
         !(requestOptions.body instanceof FormData) &&
@@ -340,17 +330,12 @@ async function apiRequest(endpoint, options = {}) {
         headers.set("Content-Type", "application/json");
     }
 
-
-    /*
-     * Protected requests receive authentication token.
-     */
     if (options.auth === true) {
         const token = getAuthToken();
         if (token) {
             headers.set("Authorization", `Bearer ${token}`);
         }
     }
-
 
     try {
         const response = await fetch(`${API}${endpoint}`, requestOptions);
@@ -1025,10 +1010,10 @@ function renderPostCard(post, postId) {
             <p class="post-text">${escapeHTML(content)}</p>
             <div class="post-card-footer">
                 <div class="post-buttons">
-                    <button type="button" class="btn edit-post-btn" data-post-id="${escapeHTML(postId)}" onclick="editPost('${escapeHTML(postId)}')" aria-label="Edit ${escapeHTML(title)}">
+                    <button type="button" class="btn edit-post-btn" data-post-id="${escapeHTML(postId)}" aria-label="Edit ${escapeHTML(title)}">
                         <i class="fas fa-pen" aria-hidden="true"></i> Edit
                     </button>
-                    <button type="button" class="btn secondary delete-post-btn" data-post-id="${escapeHTML(postId)}" onclick="deletePost('${escapeHTML(postId)}')" aria-label="Delete ${escapeHTML(title)}">
+                    <button type="button" class="btn secondary delete-post-btn" data-post-id="${escapeHTML(postId)}" aria-label="Delete ${escapeHTML(title)}">
                         <i class="fas fa-trash" aria-hidden="true"></i> Delete
                     </button>
                 </div>
@@ -1455,6 +1440,13 @@ function initializePostForm() {
         postForm.addEventListener("submit", savePost);
     }
 
+    if (savePostButton) {
+        savePostButton.addEventListener("click", function(event) {
+            event.preventDefault();
+            savePost(event);
+        });
+    }
+
     if (resetPostButton) {
         resetPostButton.addEventListener("click", function(event) {
             event.preventDefault();
@@ -1480,7 +1472,7 @@ function initializePostForm() {
 
 
 /* =========================================
-   33. POST EVENTS
+   33. POST EVENTS (EVENT DELEGATION)
 ========================================= */
 
 function initializePostEvents() {
@@ -1489,11 +1481,27 @@ function initializePostEvents() {
     }
 
     postsContainer.addEventListener("click", function(event) {
-        const button = event.target.closest(".edit-post-btn, .delete-post-btn");
-        if (!button || !postsContainer.contains(button)) {
+        const editButton = event.target.closest(".edit-post-btn");
+        const deleteButton = event.target.closest(".delete-post-btn");
+
+        if (editButton) {
+            event.preventDefault();
+            const postId = editButton.getAttribute("data-post-id");
+            if (postId) {
+                editPost(postId);
+            }
             return;
         }
-    }, true);
+
+        if (deleteButton) {
+            event.preventDefault();
+            const postId = deleteButton.getAttribute("data-post-id");
+            if (postId) {
+                deletePost(postId);
+            }
+            return;
+        }
+    });
 }
 
 
@@ -1686,16 +1694,7 @@ function initializeVisibilitySync() {
 
 
 /* =========================================
-   42. AUTHENTICATION STATE CHECK
-========================================= */
-
-async function verifyExistingSession() {
-    /* Session verification logic if supported by backend */
-}
-
-
-/* =========================================
-   43. GLOBAL FUNCTIONS
+   42. GLOBAL FUNCTIONS
 ========================================= */
 
 window.signup = signup;
@@ -1715,7 +1714,7 @@ window.showMessage = showMessage;
 
 
 /* =========================================
-   44. APPLICATION INITIALIZATION
+   43. APPLICATION INITIALIZATION
 ========================================= */
 
 function initializeBlog() {
@@ -1731,12 +1730,11 @@ function initializeBlog() {
     initializeKeyboardShortcuts();
     initializeVisibilitySync();
     loadPosts();
-    verifyExistingSession();
 }
 
 
 /* =========================================
-   45. START APPLICATION
+   44. START APPLICATION
 ========================================= */
 
 if (document.readyState === "loading") {
