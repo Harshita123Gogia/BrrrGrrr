@@ -1139,9 +1139,9 @@ date ? `<span class="post-date" aria-label="Published ${escapeHTML(date)}">${esc
 <p class="post-text"> ${escapeHTML(content)}</p>
 <div class="post-card-footer">
 <div class="post-buttons">
-<button type="button" class="btn edit-post-btn" data-post-id="${escapeHTML(postId)}" aria-label="Edit ${escapeHTML(title)}">
+<button type="button" class="btn edit-post-btn" data-post-id="${escapeHTML(postId)}" onclick="editPost(\'${escapeHTML(postId)}\')" aria-label="Edit ${escapeHTML(title)}">
 <i class="fas fa-pen" aria-hidden="true"></i> Edit</button>
-<button type="button" class="btn secondary delete-post-btn" data-post-id="${escapeHTML(postId)}" aria-label="Delete ${escapeHTML(title)}">
+<button type="button" class="btn secondary delete-post-btn" data-post-id="${escapeHTML(postId)}" onclick="deletePost(\'${escapeHTML(postId)}\')" aria-label="Delete ${escapeHTML(title)}">
 <i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
 </div>
 </div>
@@ -1645,27 +1645,20 @@ function initializePostEvents() {
         return;
     }
 
+    /*
+     * Buttons also have direct onclick handlers in the rendered HTML.
+     * Keep this delegated handler as a fallback for dynamically rendered
+     * cards and for clicks on the icon/text inside a button.
+     */
     postsContainer.addEventListener("click", function(event) {
-            const editButton = event.target.closest(".edit-post-btn");
-            if (editButton) {
-                const id = editButton.dataset.postId;
-                if (id) {
-                    editPost(id);
-                }
-
-                return;
-            }
-
-
-            const deleteButton = event.target.closest(".delete-post-btn");
-            if (deleteButton) {
-                const id = deleteButton.dataset.postId;
-                if (id) {
-                    deletePost(id);
-                }
-            }
+        const button = event.target.closest(".edit-post-btn, .delete-post-btn");
+        if (!button || !postsContainer.contains(button)) {
+            return;
         }
-    );
+
+        /* The inline handler is the primary handler. Do not run the
+         * delegated handler again or the action could execute twice. */
+    }, true);
 }
 
 
@@ -1997,6 +1990,15 @@ function initializeBlog() {
      */
     verifyExistingSession();
 }
+
+
+/* =========================================
+   GLOBAL POST ACTIONS
+========================================= */
+
+/* Explicitly expose these functions for dynamically rendered buttons. */
+window.editPost = editPost;
+window.deletePost = deletePost;
 
 
 /* =========================================
