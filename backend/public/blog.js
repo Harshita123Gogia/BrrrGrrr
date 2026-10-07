@@ -1354,11 +1354,22 @@ async function savePost(event) {
             );
 
 
-        if (response.status === 401 ||  response.status === 403) {
+        if (response.status === 401) {
             handleUnauthorized();
             return;
         }
 
+        if (response.status === 403) {
+            const message = getApiMessage(
+                data,
+                isEditing
+                    ? "You are not allowed to modify this post."
+                    : "You are not allowed to save this post."
+            );
+            showFormMessage(message, "error");
+            showMessage(message, "error");
+            return;
+        }
 
         if (!response.ok) {
             const message = getApiMessage( data, "Unable to save the post.");
@@ -1522,11 +1533,19 @@ async function deletePost(id) {
             );
 
 
-        if (response.status === 401 || response.status === 403) {
+        if (response.status === 401) {
             handleUnauthorized();
             return;
         }
 
+        if (response.status === 403) {
+            const message = getApiMessage(
+                data,
+                "You are not allowed to delete this post."
+            );
+            showMessage(message, "error");
+            return;
+        }
 
         if (!response.ok) {
             const message = getApiMessage(data,"Unable to delete the post.");
