@@ -240,15 +240,17 @@ Add any other project-specific configuration required by the backend.
 
 ## 🌐 Deployment
 
-Before deployment, update frontend API URLs that still point to localhost.
+The project is deployed on Render and is available at:
 
-For example:
+Live Website: https://brrrgrrr-qa8w.onrender.com/
+
+The frontend uses the same-origin API path:
 
 ```javascript
-const API_BASE_URL = "http://localhost:5001/api";
-```
+const API_BASE_URL = "/api";
 
-should be changed to the production backend URL when deploying.
+This works both locally and in production, so a separate production API URL is not required.
+```
 
 Also make sure production storage is configured appropriately for any data that must persist after deployment.
 
