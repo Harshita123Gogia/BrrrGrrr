@@ -1413,7 +1413,7 @@ function addItem(name,price) {
 
     saveCart();
 
-    showMessage(`${safeName} added to your cart!`, "success");
+    showMessage("Successfully added to cart!", "success");
 }
 
 window.addItem = addItem;
@@ -1461,7 +1461,7 @@ function addCustomBurger() {
     saveCart();
     renderIngredients();
     renderCustomizer();
-    showMessage("Custom burger added to your cart!", "success");
+    showMessage("Successfully added to cart!", "success");
 }
 
 
@@ -1543,7 +1543,7 @@ function updateQuantity(index,change) {
             cart.splice(numericIndex,1);
             saveCart();
             renderIngredients();
-            showMessage("Custom burger removed from cart.","success");
+            showMessage("Removed from cart.","success");
             return;
         }
     }
@@ -1580,7 +1580,7 @@ function removeItem(index) {
     cart.splice(numericIndex,1);
     saveCart();
     renderIngredients();
-    showMessage(`${removedName} removed from cart.`,"success");
+    showMessage("Removed from cart.","success");
 }
 
 window.removeItem = removeItem;
@@ -2234,25 +2234,124 @@ window.addEventListener(
 ========================================= */
 
 function showMessage(message, type = "success") {
-    let toast = document.querySelector("#toast-notification");
+
+    if (!document.body) {
+        return;
+    }
+
+    /* -----------------------------------------
+       CREATE TOAST STYLES ONCE
+    ----------------------------------------- */
+
+    if (!document.querySelector("#brrrgrrr-toast-styles")) {
+
+        const style = document.createElement("style");
+
+        style.id = "brrrgrrr-toast-styles";
+
+        style.textContent = `
+            #toast-notification {
+                position: fixed;
+                right: 24px;
+                bottom: 24px;
+                z-index: 99999;
+                max-width: min(420px, calc(100vw - 32px));
+                padding: 14px 20px;
+                border-radius: 12px;
+                background: #1f2937;
+                color: #ffffff;
+                font-size: 15px;
+                font-weight: 700;
+                line-height: 1.4;
+                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+                opacity: 0;
+                visibility: hidden;
+                transform: translateY(16px);
+                transition:
+                    opacity 0.25s ease,
+                    transform 0.25s ease,
+                    visibility 0.25s ease;
+                pointer-events: none;
+            }
+
+            #toast-notification.visible {
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(0);
+            }
+
+            #toast-notification.success {
+                background: #20b86b;
+            }
+
+            #toast-notification.error {
+                background: #ef4444;
+            }
+
+            #toast-notification.info {
+                background: #2563eb;
+            }
+
+            @media (max-width: 600px) {
+                #toast-notification {
+                    right: 16px;
+                    left: 16px;
+                    bottom: 16px;
+                    max-width: none;
+                    text-align: center;
+                }
+            }
+        `;
+
+        document.head.appendChild(style);
+    }
+
+    /* -----------------------------------------
+       CREATE / UPDATE TOAST
+    ----------------------------------------- */
+
+    let toast =
+        document.querySelector("#toast-notification");
+
     if (!toast) {
-        toast = document.createElement("div");
-        toast.id = "toast-notification";
-        toast.setAttribute("role", "status");
-        toast.setAttribute("aria-live", "polite");
+
+        toast =
+            document.createElement("div");
+
+        toast.id =
+            "toast-notification";
+
+        toast.setAttribute(
+            "role",
+            "status"
+        );
+
+        toast.setAttribute(
+            "aria-live",
+            "polite"
+        );
+
+        toast.setAttribute(
+            "aria-atomic",
+            "true"
+        );
+
         document.body.appendChild(toast);
     }
 
-    toast.className = `toast-notification ${type}`;
-    toast.textContent = String(message);
+    clearTimeout(toastTimeout);
+
+    toast.className =
+        `toast-notification ${type}`;
+
+    toast.textContent =
+        String(message || "");
 
     requestAnimationFrame(
         () => {
             toast.classList.add("visible");
         }
     );
-
-    clearTimeout(toastTimeout);
 
     toastTimeout =
         setTimeout(
